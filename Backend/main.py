@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 
-from ws import usuario_ws
+from ws import usuario_ws, producto_ws
 
 app = FastAPI()
 
 app.include_router(usuario_ws.router)
-
+app.include_router(producto_ws.router)
 
 
     
