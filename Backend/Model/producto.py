@@ -1,17 +1,19 @@
 from sqlmodel import SQLModel, Field
 
 class ProductoBase(SQLModel):
-    nombre: str
+    nombre: str = Field(index=True)
     codigo_de_barras: str
     precio: float
-    id_usuario: int
-    id_categoria: int
     
 class Producto(ProductoBase, table=True):
     id: int = Field(default=None, primary_key=True)
+    id_usuario: int  = Field(foreign_key="usuario.id")
+    id_categoria: int = Field(foreign_key="categoria.id")
 
 class ProductoPublic(ProductoBase):
     id: int
+    nombre_usuario: str
+    nombre_categoria: str
 
 class ProductoCreate(ProductoBase):
     pass
