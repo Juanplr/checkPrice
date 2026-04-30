@@ -1,9 +1,10 @@
 from sqlmodel import SQLModel, Field
+from decimal import Decimal
 
 class ProductoBase(SQLModel):
     nombre: str = Field(index=True)
     codigo_de_barras: str
-    precio: float
+    precio: Decimal
     
 class Producto(ProductoBase, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -12,8 +13,8 @@ class Producto(ProductoBase, table=True):
 
 class ProductoPublic(ProductoBase):
     id: int
-    nombre_usuario: str
-    nombre_categoria: str
+    nombre_usuario: str | None
+    nombre_categoria: str | None
 
 class ProductoCreate(ProductoBase):
     pass
@@ -21,6 +22,6 @@ class ProductoCreate(ProductoBase):
 class ProductoUpdate(ProductoBase):
     nombre: str | None = None
     codigo_de_barras: str | None = None
-    precio: float | None = None
+    precio: Decimal | None = None
     id_usuario: int | None = None
     id_categoria: int | None = None

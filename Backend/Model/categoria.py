@@ -11,7 +11,7 @@ class CategoriaPublic(CategoriaBase):
     id: int
 
 class CategoriaCreate(CategoriaBase):
-    pass
+    nombre: str
 
 class CategoriaUpdate(CategoriaBase):
     nombre: str | None = None

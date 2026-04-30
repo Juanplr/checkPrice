@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from typing import Annotated
-from model.usuario import UsuarioCreate, UsuarioPublic, Usuario, UsuarioUpdate
+from model.usuario import UsuarioCreate, UsuarioPublic, UsuarioUpdate
 from data_base import session_dep
-from sqlmodel import select
+from domain.imp_usuario import ImpUsuario
 
 router = APIRouter()
 
@@ -12,18 +12,15 @@ def read_usuarios(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100,
 ):
-    usuarios = session.exec(select(Usuario).offset(offset).limit(limit)).all()
-    return usuarios
+    return ImpUsuario.get_usuarios(session, offset, limit)
+
 
 @router.get("/usuario/{usuario_id}", response_model=UsuarioPublic)
 def read_usuario(
     usuario_id: int,
     session: session_dep,
 ):
-    usuario = session.get(Usuario, usuario_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    return usuario
+    return ImpUsuario.get_usuario(usuario_id, session)
 
 
 @router.post("/usuario", response_model=UsuarioPublic)
@@ -31,11 +28,7 @@ def create_usuario(
     usuario: UsuarioCreate,
     session: session_dep,
 ):
-    db_usuario = Usuario.model_validate(usuario)
-    session.add(db_usuario)
-    session.commit()
-    session.refresh(db_usuario)
-    return db_usuario
+    return ImpUsuario.create_usuario(usuario, session)
 
 
 @router.patch("/usuario/{usuario_id}",response_model=UsuarioPublic)
@@ -44,15 +37,7 @@ def update_usuario(
     usuario: UsuarioUpdate,
     session: session_dep,
 ):
-    db_usuario = session.get(Usuario, usuario_id)
-    if not db_usuario:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    for key, value in usuario.model_dump().items():
-        setattr(db_usuario, key, value)
-    session.add(db_usuario)
-    session.commit()
-    session.refresh(db_usuario)
-    return db_usuario
+    return ImpUsuario.update_usuario(usuario_id, usuario, session)
 
 
 @router.delete("/usuario/{usuario_id}")
@@ -60,9 +45,4 @@ def delete_usuario(
     usuario_id: int,
     session: session_dep,
 ):
-    usuario = session.get(Usuario, usuario_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario not found")
-    session.delete(usuario)
-    session.commit()
-    return {"message": "Usuario eliminado"}
+    return ImpUsuario.delete_usuario(usuario_id, session)
