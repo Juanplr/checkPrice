@@ -13,11 +13,15 @@ class Producto(ProductoBase, table=True):
 
 class ProductoPublic(ProductoBase):
     id: int
-    nombre_usuario: str | None
-    nombre_categoria: str | None
-
+    nombre_usuario: str | None = None
+    nombre_categoria: str | None = None
+    
 class ProductoCreate(ProductoBase):
-    pass
+    nombre: str = Field(index=True)
+    codigo_de_barras: str
+    precio: Decimal
+    id_usuario: int  
+    id_categoria: int
 
 class ProductoUpdate(ProductoBase):
     nombre: str | None = None
