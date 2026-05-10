@@ -60,8 +60,8 @@ class ImpProducto():
         db_producto = session.get(Producto, producto_id)
         if not db_producto:
             raise HTTPException(status_code=404, detail="Producto no encontrado")
-        for key, value in producto.model_dump().items():
-            setattr(db_producto, key, value)
+        producto_data = producto.model_dump(exclude_unset=True)
+        db_producto.sqlmodel_update(producto_data)
         session.add(db_producto)
         session.commit()
         session.refresh(db_producto)

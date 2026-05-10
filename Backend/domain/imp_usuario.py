@@ -2,6 +2,8 @@ from fastapi import HTTPException
 from model.usuario import Usuario, UsuarioCreate, UsuarioUpdate
 from sqlmodel import select
 from data_base import session_dep
+from sqlalchemy.exc import IntegrityError as ExceptionIntegrityError
+from pydantic import EmailStr
 
 class ImpUsuario():
     
@@ -32,8 +34,8 @@ class ImpUsuario():
         db_usuario = session.get(Usuario, usuario_id)
         if not db_usuario:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        for key, value in usuario.model_dump().items():
-            setattr(db_usuario, key, value)
+        usuario_data = usuario.model_dump(exclude_unset=True)
+        db_usuario.sqlmodel_update(usuario_data)
         session.add(db_usuario)
         session.commit()
         session.refresh(db_usuario)
@@ -41,9 +43,20 @@ class ImpUsuario():
     
     @staticmethod
     def delete_usuario(usuario_id: int, session: session_dep):
-        usuario = session.get(Usuario, usuario_id)
+        try:
+            usuario = session.get(Usuario, usuario_id)
+            if not usuario:
+                raise HTTPException(status_code=404, detail="Usuario no encontrado")
+            session.delete(usuario)
+            session.commit()
+            return {"message": "Usuario eliminado"}
+        except ExceptionIntegrityError as e:
+            raise HTTPException(status_code=500, detail="Este usuario está asociado a uno o más productos y no se puede eliminar")
+        
+    @staticmethod
+    def login_usuario(correo: EmailStr, contrasena: str, session: session_dep):
+        statement = select(Usuario).where(Usuario.correo == correo, Usuario.contrasena == contrasena)
+        usuario = session.exec(statement).first()
         if not usuario:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        session.delete(usuario)
-        session.commit()
-        return {"message": "Usuario eliminado"}
+            raise HTTPException(status_code=404, detail="Correo o contraseña incorrectos")
+        return usuario

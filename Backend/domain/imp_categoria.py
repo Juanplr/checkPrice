@@ -33,8 +33,8 @@ class ImpCategoria():
         db_categoria = session.get(Categoria, categoria_id)
         if not db_categoria:
             raise HTTPException(status_code=404, detail="Categoría no encontrada")
-        for key, value in categoria.model_dump().items():
-            setattr(db_categoria, key, value)
+        categoria_data = categoria.model_dump(exclude_unset=True)
+        db_categoria.sqlmodel_update(categoria_data)
         session.add(db_categoria)
         session.commit()
         session.refresh(db_categoria)
