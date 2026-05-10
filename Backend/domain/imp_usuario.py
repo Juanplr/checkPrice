@@ -3,6 +3,7 @@ from model.usuario import Usuario, UsuarioCreate, UsuarioUpdate
 from sqlmodel import select
 from data_base import session_dep
 from sqlalchemy.exc import IntegrityError as ExceptionIntegrityError
+from pydantic import EmailStr
 
 class ImpUsuario():
     
@@ -51,3 +52,11 @@ class ImpUsuario():
             return {"message": "Usuario eliminado"}
         except ExceptionIntegrityError as e:
             raise HTTPException(status_code=500, detail="Este usuario está asociado a uno o más productos y no se puede eliminar")
+        
+    @staticmethod
+    def login_usuario(correo: EmailStr, contrasena: str, session: session_dep):
+        statement = select(Usuario).where(Usuario.correo == correo, Usuario.contrasena == contrasena)
+        usuario = session.exec(statement).first()
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Correo o contraseña incorrectos")
+        return usuario
