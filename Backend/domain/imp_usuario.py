@@ -1,9 +1,15 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from model.usuario import Usuario, UsuarioCreate, UsuarioUpdate
 from sqlmodel import select
 from data_base import session_dep
 from sqlalchemy.exc import IntegrityError as ExceptionIntegrityError
 from pydantic import EmailStr
+from fastapi.security import OAuth2PasswordRequestForm
+from model.token import authenticate_user, Token, create_access_token, get_password_hash
+from typing import Annotated
+from datetime import datetime, timedelta
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 class ImpUsuario():
     
@@ -23,6 +29,7 @@ class ImpUsuario():
     
     @staticmethod
     def create_usuario(usuario: UsuarioCreate, session: session_dep):
+        usuario.contrasena = get_password_hash(usuario.contrasena)
         db_usuario = Usuario.model_validate(usuario)
         session.add(db_usuario)
         session.commit()
@@ -54,9 +61,16 @@ class ImpUsuario():
             raise HTTPException(status_code=500, detail="Este usuario está asociado a uno o más productos y no se puede eliminar")
         
     @staticmethod
-    def login_usuario(correo: EmailStr, contrasena: str, session: session_dep):
-        statement = select(Usuario).where(Usuario.correo == correo, Usuario.contrasena == contrasena)
-        usuario = session.exec(statement).first()
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Correo o contraseña incorrectos")
-        return usuario
+    def login_usuario(form_data: OAuth2PasswordRequestForm, session: session_dep):
+        user = authenticate_user(session,form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.user_name}, expires_delta=access_token_expires
+        )
+        return Token(access_token=access_token, token_type="bearer")
