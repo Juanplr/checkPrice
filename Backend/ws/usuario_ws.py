@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from typing import Annotated
-from model.usuario import UsuarioCreate, UsuarioPublic, UsuarioUpdate
+from model.usuario import UsuarioCreate, UsuarioPublic, UsuarioUpdate, Usuario
 from data_base import session_dep
 from domain.imp_usuario import ImpUsuario
 from pydantic import EmailStr
+from fastapi.security import OAuth2PasswordRequestForm
+from model.token import Token, get_current_active_user
 
 router = APIRouter(
     prefix="/usuario",
@@ -25,6 +27,7 @@ def read_usuarios(
 def read_usuario(
     usuario_id: int,
     session: session_dep,
+    current_user: Annotated[Usuario, Depends(get_current_active_user)]
 ):
     return ImpUsuario.get_usuario(usuario_id, session)
 
@@ -53,10 +56,9 @@ def delete_usuario(
 ):
     return ImpUsuario.delete_usuario(usuario_id, session)
 
-@router.get("/login/{correo}/{contrasena}", response_model=UsuarioPublic)
-def login_usuario(
-    correo: EmailStr,
-    contrasena: str,
+@router.post("/login")
+async def login_usuario(
     session: session_dep,
-):
-    return ImpUsuario.login_usuario(correo, contrasena, session)
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+    return ImpUsuario.login_usuario(form_data, session)
