@@ -1,15 +1,10 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from model.usuario import Usuario, UsuarioCreate, UsuarioUpdate
 from sqlmodel import select
 from data_base import session_dep
 from sqlalchemy.exc import IntegrityError as ExceptionIntegrityError
-from pydantic import EmailStr
-from fastapi.security import OAuth2PasswordRequestForm
-from model.token import authenticate_user, Token, create_access_token, get_password_hash
-from typing import Annotated
-from datetime import datetime, timedelta
+from domain.imp_token import get_password_hash
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 class ImpUsuario():
     
@@ -59,18 +54,3 @@ class ImpUsuario():
             return {"message": "Usuario eliminado"}
         except ExceptionIntegrityError as e:
             raise HTTPException(status_code=500, detail="Este usuario está asociado a uno o más productos y no se puede eliminar")
-        
-    @staticmethod
-    def login_usuario(form_data: OAuth2PasswordRequestForm, session: session_dep):
-        user = authenticate_user(session,form_data.username, form_data.password)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": user.user_name}, expires_delta=access_token_expires
-        )
-        return Token(access_token=access_token, token_type="bearer")
