@@ -89,6 +89,6 @@ def token_usuario(form_data: OAuth2PasswordRequestForm, session: session_dep):
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.user_name}, expires_delta=access_token_expires
+        data={"sub": user.user_name, "id": user.id, "user_name": user.user_name}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
